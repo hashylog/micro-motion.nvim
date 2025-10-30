@@ -1,8 +1,4 @@
-<h1 style="text-align: center">
-    micro-motion.nvim
-</h1> 
-
----
+# micro-motion.nvim
 
 Micro Motion is a lightweight NeoVim plugin that replicates the **word navigation behavior** of the [Micro Editor](https://micro-editor.github.io/).
 
@@ -25,7 +21,7 @@ This plugin redefines `<C-Left>` and `<C-Right>` to move through words in a way 
 {
   "hashylog/micro-motion.nvim",
   config = function()
-    require("micro_motion").setup()
+    require("micro-motion").setup()
   end
 }
 ```
@@ -36,7 +32,7 @@ This plugin redefines `<C-Left>` and `<C-Right>` to move through words in a way 
 use {
   "hashylog/micro-motion.nvim",
   config = function()
-    require("micro_motion").setup()
+    require("micro-motion").setup()
   end
 }
 ```
