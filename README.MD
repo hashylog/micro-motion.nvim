@@ -1,17 +1,19 @@
-# micro-motion.nvim
-
-A lightweight Neovim plugin that replicates the **word navigation behavior** of the [Micro Editor](https://micro-editor.github.io/).
-
-This plugin redefines `<C-Left>` and `<C-Right>` to move through words in a way that matches Micro’s intuitive word-jumping logic — including support for underscores, punctuation, and whitespace handling similar to Micro.
+<h1 style="text-align: center">
+    micro-motion.nvim
+</h1> 
 
 ---
+
+Micro Motion is a lightweight NeoVim plugin that replicates the **word navigation behavior** of the [Micro Editor](https://micro-editor.github.io/).
+
+This plugin redefines `<C-Left>` and `<C-Right>` to move through words in a way that matches Micro’s intuitive word-jumping logic.
+
 
 ## Features
 
 - Lightweight and dependency-free  
-- Micro-style word navigation in all modes (Normal, Insert, Visual)  
-- Key mappings for both movement and selection (`<C-S-Left>` / `<C-S-Right>`)  
-- Clean Lua implementation with no external dependencies
+- Better word navigation in all modes (Normal, Insert, Visual)  
+- Clean Lua implementation
 
 ---
 
@@ -63,15 +65,13 @@ require("micro_motion").setup()
 | Insert | `<C-Left>`    | Move word left (Micro-style)  |
 | Visual | `<C-Right>`   | Extend selection right        |
 | Visual | `<C-Left>`    | Extend selection left         |
-| Normal | `<C-S-Right>` | Select word right             |
-| Normal | `<C-S-Left>`  | Select word left              |
 
 ---
 
 ## Customization
 
 All mappings are defined inside `setup()`.
-If you want to disable or remap them, you can override the mappings in your config file **after** calling `setup()`:
+If you want to disable or remap them, you can override the mappings in your config file after calling `setup()`:
 
 ```lua
 require("micro_motion").setup()
@@ -80,13 +80,3 @@ require("micro_motion").setup()
 vim.keymap.set("n", "<A-Right>", require("micro_motion").word_right)
 vim.keymap.set("n", "<A-Left>",  require("micro_motion").word_left)
 ```
-
----
-
-## How It Works
-
-`micro-motion.nvim` reproduces Micro’s logic for word motion:
-
-* Words include letters, digits, and underscores (`[A-Za-z0-9_]`).
-* Non-word symbols are handled as separate navigation blocks.
-* Whitespace and punctuation boundaries are treated distinctly — just like in Micro.
