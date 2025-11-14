@@ -42,7 +42,8 @@ end
 -- Motion: Move Right
 -----------------------------------------------------------
 
---- Move cursor one "word" to the right.
+--- Move cursor one "word" to the right (Micro Editor style).
+--- Stops at the END of tokens (right after the last character, before any trailing whitespace).
 function M.word_right()
     local line = vim.api.nvim_get_current_line()
     local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -55,49 +56,57 @@ function M.word_right()
         return
     end
 
-    local start_col = col
     local current_char = get_char_at(line, col)
 
-    -- Skip initial whitespace
-    while col < #line and is_whitespace(get_char_at(line, col)) do
-        col = col + 1
+    -- If currently on whitespace, skip all whitespace first
+    if is_whitespace(current_char) then
+        while col < #line and is_whitespace(get_char_at(line, col)) do
+            col = col + 1
+        end
+        -- After skipping whitespace, continue to skip the next token
+        if col >= #line then
+            vim.api.nvim_win_set_cursor(0, { row, col })
+            return
+        end
+        current_char = get_char_at(line, col)
     end
 
-    -- If we skipped whitespace, stop here
-    if col > start_col then
+    -- Now we're on a non-whitespace character, skip to end of this token
+    if is_word_char(current_char) then
+        -- Skip to end of word
+        while col < #line and is_word_char(get_char_at(line, col)) do
+            col = col + 1
+        end
         vim.api.nvim_win_set_cursor(0, { row, col })
         return
     end
 
-    -- Case 1: Non-word characters (punctuation, symbols, etc.)
+    -- If on non-word character (punctuation), check if it's a block or single char
     if is_non_word_char(current_char) then
-        -- Skip a block of consecutive non-word characters
+        -- Check if next char is also non-word (forming a block)
         if col + 1 < #line and is_non_word_char(get_char_at(line, col + 1)) then
-            while col < #line and is_non_word_char(get_char_at(line, col)) and not is_whitespace(get_char_at(line, col)) do
+            -- Skip entire block of non-word characters
+            while col < #line and is_non_word_char(get_char_at(line, col)) do
                 col = col + 1
             end
         else
-            -- Otherwise, move just one char
+            -- Single non-word char, just move past it
             col = col + 1
         end
-
-    -- Case 2: Word characters
-    else
-        -- Move forward through the rest of the word
-        col = col + 1
-        while col < #line and is_word_char(get_char_at(line, col)) do
-            col = col + 1
-        end
+        vim.api.nvim_win_set_cursor(0, { row, col })
+        return
     end
 
-    vim.api.nvim_win_set_cursor(0, { row, col })
+    -- Fallback: just move one position
+    vim.api.nvim_win_set_cursor(0, { row, col + 1 })
 end
 
 -----------------------------------------------------------
 -- Motion: Move Left
 -----------------------------------------------------------
 
---- Move cursor one "word" to the left.
+--- Move cursor one "word" to the left (Micro Editor style).
+--- Stops at the START of tokens (after any leading whitespace).
 function M.word_left()
     local line = vim.api.nvim_get_current_line()
     local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -111,48 +120,65 @@ function M.word_left()
         return
     end
 
+    -- Move back one position first
     col = col - 1
-    local start_col = col
+    local current_char = get_char_at(line, col)
 
-    -- Skip whitespace to the left
-    while col > 0 and is_whitespace(get_char_at(line, col)) do
-        col = col - 1
+    -- If we land on whitespace, skip all whitespace and continue to the token before it
+    if is_whitespace(current_char) then
+        -- Skip all whitespace
+        while col >= 0 and is_whitespace(get_char_at(line, col)) do
+            col = col - 1
+        end
+
+        -- If we went past the start, stop at position 0
+        if col < 0 then
+            vim.api.nvim_win_set_cursor(0, { row, 0 })
+            return
+        end
+
+        -- Now we're on a non-whitespace character, go back to start of this token
+        current_char = get_char_at(line, col)
+
+        if is_word_char(current_char) then
+            while col > 0 and is_word_char(get_char_at(line, col - 1)) do
+                col = col - 1
+            end
+        elseif is_non_word_char(current_char) then
+            -- Check if it's a block of non-word chars
+            if col > 0 and is_non_word_char(get_char_at(line, col - 1)) then
+                while col > 0 and is_non_word_char(get_char_at(line, col - 1)) do
+                    col = col - 1
+                end
+            end
+        end
+
+        vim.api.nvim_win_set_cursor(0, { row, col })
+        return
     end
 
-    -- If we skipped whitespace, stop right after last non-space
-    if col < start_col and col >= 0 then
-        if not is_whitespace(get_char_at(line, col)) then
-            col = col + 1
+    -- If we land on a word character, go back to start of word
+    if is_word_char(current_char) then
+        while col > 0 and is_word_char(get_char_at(line, col - 1)) do
+            col = col - 1
         end
         vim.api.nvim_win_set_cursor(0, { row, col })
         return
     end
 
-    local current_char = get_char_at(line, col)
-
-    -- Case 1: Non-word characters
+    -- If we land on a non-word character
     if is_non_word_char(current_char) then
-        -- Skip a block of consecutive non-word characters
+        -- Check if it's a block of non-word chars
         if col > 0 and is_non_word_char(get_char_at(line, col - 1)) then
-            while col > 0 and is_non_word_char(get_char_at(line, col)) and not is_whitespace(get_char_at(line, col)) do
+            while col > 0 and is_non_word_char(get_char_at(line, col - 1)) do
                 col = col - 1
             end
-            -- Adjust if we went one too far
-            if not is_non_word_char(get_char_at(line, col)) or is_whitespace(get_char_at(line, col)) then
-                col = col + 1
-            end
         end
-
-    -- Case 2: Word characters
-    else
-        -- Move backward through the rest of the word
-        col = col - 1
-        while col >= 0 and is_word_char(get_char_at(line, col)) do
-            col = col - 1
-        end
-        col = col + 1
+        vim.api.nvim_win_set_cursor(0, { row, col })
+        return
     end
 
+    -- Fallback
     vim.api.nvim_win_set_cursor(0, { row, col })
 end
 
